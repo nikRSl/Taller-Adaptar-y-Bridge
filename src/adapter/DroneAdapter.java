@@ -1,28 +1,28 @@
 package adapter;
 
-import legacy.DroneAntiguo;
+import legacy.LegacyDrone;
 
-public class DroneAdapter implements ControlDrone {
+public class DroneAdapter implements DroneControl {
 
-    private DroneAntiguo droneAntiguo;
+    private LegacyDrone droneAntiguo;
 
-    public DroneAdapter(DroneAntiguo droneAntiguo) {
+    public DroneAdapter(LegacyDrone droneAntiguo) {
         this.droneAntiguo = droneAntiguo;
     }
 
-    public void encender() {
-        droneAntiguo.iniciarMotor();
+    public void turnOn() {
+        droneAntiguo.startMotor();
     }
 
-    public void volar() {
-        droneAntiguo.despegarAntiguo();
+    public void fly() {
+        droneAntiguo.legacyTakeOff();
     }
 
-    public void aterrizar() {
+    public void land() {
         System.out.println("Drone antiguo aterrizando manualmente.");
     }
 
-    public void verificarBateria() {
-        System.out.println("Combustible restante: " + droneAntiguo.revisarCombustible() + "%");
+    public void checkBattery() {
+        System.out.println("Combustible restante: " + droneAntiguo.checkFuel() + "%");
     }
 }

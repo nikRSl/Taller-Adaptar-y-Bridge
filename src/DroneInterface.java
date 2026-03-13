@@ -5,11 +5,11 @@ import java.awt.event.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import bridge.*;
-import energia.*;
+import energy.*;
 import adapter.*;
 import legacy.*;
 
-public class InterfazDrones extends JFrame {
+public class DroneInterface extends JFrame {
 
     // === PALETA DE COLORES ===
     private static final Color BG_DARK       = new Color(10, 14, 26);
@@ -30,16 +30,16 @@ public class InterfazDrones extends JFrame {
     private static Font FONT_SMALL;
     private static Font FONT_LOG;
 
-    private JComboBox<String> tipoDrone;
-    private JComboBox<String> tipoEnergia;
+    private JComboBox<String> droneType;
+    private JComboBox<String> energyType;
     private JTextArea log;
-    private JProgressBar barraEnergia;
+    private JProgressBar energyBar;
     private JLabel droneIconLabel;
     private JLabel statusLabel;
     private JLabel droneNameLabel;
 
-    private Drone droneActual;
-    private ControlDrone droneAdaptado;
+    private Drone currentDrone;
+    private DroneControl adaptedDrone;
 
     static {
         try {
@@ -55,7 +55,7 @@ public class InterfazDrones extends JFrame {
         }
     }
 
-    public InterfazDrones() {
+    public DroneInterface() {
         setTitle("⬡  DRONE CONTROL SYSTEM  v2.0");
         setSize(820, 620);
         setLocationRelativeTo(null);
@@ -64,15 +64,15 @@ public class InterfazDrones extends JFrame {
         getContentPane().setBackground(BG_DARK);
         setLayout(new BorderLayout(10, 10));
 
-        add(crearHeader(),       BorderLayout.NORTH);
-        add(crearCentro(),       BorderLayout.CENTER);
-        add(crearPanelLog(),     BorderLayout.SOUTH);
+        add(createHeader(),       BorderLayout.NORTH);
+        add(createCenter(),       BorderLayout.CENTER);
+        add(createLogPanel(),     BorderLayout.SOUTH);
     }
 
     // ─────────────────────────────────────────────────────────────
     // HEADER
     // ─────────────────────────────────────────────────────────────
-    private JPanel crearHeader() {
+    private JPanel createHeader() {
         JPanel header = new GradientPanel(
                 new Color(8, 12, 28), new Color(18, 28, 60), true);
         header.setLayout(new BorderLayout());
@@ -103,7 +103,7 @@ public class InterfazDrones extends JFrame {
         left.add(titles);
 
         // Estado en vivo
-        statusLabel = new JLabel("● SISTEMA LISTO");
+        statusLabel = new JLabel("● SYSTEM READY");
         statusLabel.setFont(FONT_SMALL);
         statusLabel.setForeground(ACCENT_GREEN);
 
@@ -135,24 +135,24 @@ public class InterfazDrones extends JFrame {
     // ─────────────────────────────────────────────────────────────
     // CENTRO: Configuración + Controles
     // ─────────────────────────────────────────────────────────────
-    private JPanel crearCentro() {
+    private JPanel createCenter() {
         JPanel centro = new JPanel(new GridLayout(1, 2, 12, 0));
         centro.setOpaque(false);
         centro.setBorder(new EmptyBorder(4, 12, 4, 12));
-        centro.add(crearPanelConfiguracion());
-        centro.add(crearPanelControl());
+        centro.add(createSettingsPanel());
+        centro.add(createControlPanel());
         return centro;
     }
 
-    private JPanel crearPanelConfiguracion() {
-        JPanel card = new CardPanel("⬡  Configuración del Drone", ACCENT_CYAN);
+    private JPanel createSettingsPanel() {
+        JPanel card = new CardPanel("⬡  Drone Settings", ACCENT_CYAN);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         // Icono de drone animado
         droneIconLabel = new JLabel(buildDroneIcon(72, ACCENT_CYAN));
         droneIconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        droneNameLabel = new JLabel("Sin drone activo");
+        droneNameLabel = new JLabel("No active drone");
         droneNameLabel.setFont(FONT_LABEL);
         droneNameLabel.setForeground(TEXT_MUTED);
         droneNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -168,30 +168,30 @@ public class InterfazDrones extends JFrame {
         card.add(Box.createVerticalStrut(14));
 
         // Selector tipo de drone
-        card.add(buildLabel("TIPO DE DRONE", ACCENT_CYAN));
+        card.add(buildLabel("DRONE TYPE", ACCENT_CYAN));
         card.add(Box.createVerticalStrut(5));
-        tipoDrone = buildCombo(new String[]{
-                "🚁  Drone de Entrega",
-                "🔍  Drone de Exploración",
-                "⚙   Drone Antiguo"
+        droneType = buildCombo(new String[]{
+                "🚁  Delivery Drone",
+                "🔍  Exploration Drone",
+                "⚙   Legacy Drone"
         });
-        card.add(tipoDrone);
+        card.add(droneType);
         card.add(Box.createVerticalStrut(14));
 
         // Selector tipo de energía
-        card.add(buildLabel("FUENTE DE ENERGÍA", ACCENT_PURPLE));
+        card.add(buildLabel("ENERGY SOURCE", ACCENT_PURPLE));
         card.add(Box.createVerticalStrut(5));
-        tipoEnergia = buildCombo(new String[]{
-                "🔋  Litio",
-                "💧  Hidrógeno",
+        energyType = buildCombo(new String[]{
+                "🔋  Lithium",
+                "💧  Hydrogen",
                 "☀   Solar"
         });
-        card.add(tipoEnergia);
+        card.add(energyType);
         card.add(Box.createVerticalStrut(18));
 
         // Botón inicializar
-        JButton btn = buildButton("⬡  INICIALIZAR DRONE", ACCENT_CYAN, BG_DARK);
-        btn.addActionListener(e -> crearDrone());
+        JButton btn = buildButton("⬡  INITIALIZE DRONE", ACCENT_CYAN, BG_DARK);
+        btn.addActionListener(e -> createDrone());
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         card.add(btn);
@@ -200,31 +200,31 @@ public class InterfazDrones extends JFrame {
         return card;
     }
 
-    private JPanel crearPanelControl() {
-        JPanel card = new CardPanel("⬡  Panel de Control", ACCENT_PURPLE);
+    private JPanel createControlPanel() {
+        JPanel card = new CardPanel("⬡  Control Panel", ACCENT_PURPLE);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
         // Barra energía
         card.add(Box.createVerticalStrut(10));
-        card.add(buildLabel("NIVEL DE ENERGÍA", ACCENT_GREEN));
+        card.add(buildLabel("ENERGY LEVEL", ACCENT_GREEN));
         card.add(Box.createVerticalStrut(6));
 
-        barraEnergia = new JProgressBar(0, 100);
-        barraEnergia.setValue(100);
-        barraEnergia.setStringPainted(true);
-        barraEnergia.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
-        barraEnergia.setForeground(ACCENT_GREEN);
-        barraEnergia.setBackground(BG_DARK);
-        barraEnergia.setFont(FONT_SMALL);
-        barraEnergia.setBorderPainted(false);
-        barraEnergia.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(barraEnergia);
+        energyBar = new JProgressBar(0, 100);
+        energyBar.setValue(100);
+        energyBar.setStringPainted(true);
+        energyBar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+        energyBar.setForeground(ACCENT_GREEN);
+        energyBar.setBackground(BG_DARK);
+        energyBar.setFont(FONT_SMALL);
+        energyBar.setBorderPainted(false);
+        energyBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.add(energyBar);
 
         card.add(Box.createVerticalStrut(18));
         card.add(separator());
         card.add(Box.createVerticalStrut(16));
 
-        card.add(buildLabel("ACCIONES", TEXT_MUTED));
+        card.add(buildLabel("ACTIONS", TEXT_MUTED));
         card.add(Box.createVerticalStrut(10));
 
         // Botones de acción en grid 2x2
@@ -233,15 +233,15 @@ public class InterfazDrones extends JFrame {
         grid.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton encender  = buildButton("⚡ ENCENDER",   ACCENT_ORANGE, BG_DARK);
-        JButton volar     = buildButton("🚁 VOLAR",      ACCENT_CYAN,   BG_DARK);
-        JButton aterrizar = buildButton("⬇ ATERRIZAR",  ACCENT_RED,    BG_DARK);
-        JButton energia   = buildButton("🔋 ENERGÍA",    ACCENT_GREEN,  BG_DARK);
+        JButton encender  = buildButton("⚡ TURN ON",   ACCENT_ORANGE, BG_DARK);
+        JButton volar     = buildButton("🚁 FLY",      ACCENT_CYAN,   BG_DARK);
+        JButton aterrizar = buildButton("⬇ LAND",  ACCENT_RED,    BG_DARK);
+        JButton energia   = buildButton("🔋 ENERGY",    ACCENT_GREEN,  BG_DARK);
 
-        encender .addActionListener(e -> encenderDrone());
-        volar    .addActionListener(e -> volarDrone());
-        aterrizar.addActionListener(e -> aterrizarDrone());
-        energia  .addActionListener(e -> verEnergia());
+        encender .addActionListener(e -> turnOnDrone());
+        volar    .addActionListener(e -> flyDrone());
+        aterrizar.addActionListener(e -> landDrone());
+        energia  .addActionListener(e -> checkEnergy());
 
         grid.add(encender);
         grid.add(volar);
@@ -257,12 +257,12 @@ public class InterfazDrones extends JFrame {
     // ─────────────────────────────────────────────────────────────
     // LOG
     // ─────────────────────────────────────────────────────────────
-    private JPanel crearPanelLog() {
+    private JPanel createLogPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(0, 12, 12, 12));
 
-        JPanel card = new CardPanel("⬡  Registro del Sistema", TEXT_MUTED);
+        JPanel card = new CardPanel("⬡  System Log", TEXT_MUTED);
         card.setLayout(new BorderLayout());
 
         log = new JTextArea(5, 0);
@@ -272,7 +272,7 @@ public class InterfazDrones extends JFrame {
         log.setFont(FONT_LOG);
         log.setCaretColor(ACCENT_CYAN);
         log.setBorder(new EmptyBorder(8, 10, 8, 10));
-        log.setText("» Sistema inicializado. Selecciona un drone para comenzar.\n");
+        log.setText("» System initialized. Select a drone to begin.\n");
 
         JScrollPane scroll = new JScrollPane(log);
         scroll.setBorder(BorderFactory.createLineBorder(new Color(0, 100, 80, 80), 1));
@@ -287,98 +287,98 @@ public class InterfazDrones extends JFrame {
     // ─────────────────────────────────────────────────────────────
     // LÓGICA DE DRONES (sin cambios funcionales)
     // ─────────────────────────────────────────────────────────────
-    private SistemaEnergia crearEnergia() {
-        String tipo = ((String) tipoEnergia.getSelectedItem())
+    private SistemaEnergia createEnergy() {
+        String tipo = ((String) energyType.getSelectedItem())
                 .replaceAll(".*\\s", "").trim();
         switch (tipo) {
-            case "Litio":     return new EnergiaLitio();
-            case "Hidrógeno": return new EnergiaHidrogeno();
-            case "Solar":     return new EnergiaSolar();
+            case "Lithium":     return new LithiumEnergy();
+            case "Hydrogen": return new HydrogenEnergy();
+            case "Solar":     return new SolarEnergy();
         }
-        return new EnergiaLitio();
+        return new LithiumEnergy();
     }
 
-    private void crearDrone() {
-        String tipo = (String) tipoDrone.getSelectedItem();
-        if (tipo.contains("Antiguo")) {
-            DroneAntiguo viejo = new DroneAntiguo();
-            droneAdaptado = new DroneAdapter(viejo);
-            droneActual   = null;
+    private void createDrone() {
+        String tipo = (String) droneType.getSelectedItem();
+        if (tipo.contains("Legacy")) {
+            LegacyDrone viejo = new LegacyDrone();
+            adaptedDrone = new DroneAdapter(viejo);
+            currentDrone   = null;
             droneIconLabel.setIcon(buildDroneIcon(72, ACCENT_ORANGE));
-            droneNameLabel.setText("Drone Antiguo  •  Adapter");
+            droneNameLabel.setText("Legacy Drone  •  Adapter");
             droneNameLabel.setForeground(ACCENT_ORANGE);
-            statusLabel.setText("● ADAPTER ACTIVO");
+            statusLabel.setText("● ADAPTER ACTIVE");
             statusLabel.setForeground(ACCENT_ORANGE);
-            appendLog("» Drone antiguo conectado mediante Adapter", ACCENT_ORANGE);
+            appendLog("» Legacy drone connected via Adapter", ACCENT_ORANGE);
         } else {
-            SistemaEnergia energia = crearEnergia();
-            if (tipo.contains("Entrega")) {
-                droneActual = new DroneEntrega(energia);
+            SistemaEnergia energy = createEnergy();
+            if (droneType.getSelectedItem().toString().contains("Delivery")) {
+                currentDrone = new DeliveryDrone(energy);
                 droneIconLabel.setIcon(buildDroneIcon(72, ACCENT_CYAN));
-                droneNameLabel.setText("Drone de Entrega  •  Bridge");
+                droneNameLabel.setText("Delivery Drone  •  Bridge");
                 droneNameLabel.setForeground(ACCENT_CYAN);
             } else {
-                droneActual = new DroneExploracion(energia);
+                currentDrone = new ExplorationDrone(energy);
                 droneIconLabel.setIcon(buildDroneIcon(72, ACCENT_PURPLE));
-                droneNameLabel.setText("Drone de Exploración  •  Bridge");
+                droneNameLabel.setText("Exploration Drone  •  Bridge");
                 droneNameLabel.setForeground(ACCENT_PURPLE);
             }
-            droneAdaptado = null;
-            statusLabel.setText("● DRONE ACTIVO");
+            adaptedDrone = null;
+            statusLabel.setText("● DRONE ACTIVE");
             statusLabel.setForeground(ACCENT_GREEN);
-            appendLog("» Drone moderno creado usando Bridge", ACCENT_CYAN);
+            appendLog("» Modern drone created using Bridge", ACCENT_CYAN);
         }
-        barraEnergia.setValue(100);
-        barraEnergia.setForeground(ACCENT_GREEN);
+        energyBar.setValue(100);
+        energyBar.setForeground(ACCENT_GREEN);
     }
 
-    private void encenderDrone() {
-        if (droneAdaptado != null) {
-            droneAdaptado.encender();
-            appendLog("» Motor del drone antiguo iniciado", ACCENT_ORANGE);
-        } else if (droneActual != null) {
-            appendLog("» Sistema de energía activado", ACCENT_GREEN);
-        } else nodroneMsg();
+    private void turnOnDrone() {
+        if (adaptedDrone != null) {
+            adaptedDrone.turnOn();
+            appendLog("» Legacy drone motor started", ACCENT_ORANGE);
+        } else if (currentDrone != null) {
+            appendLog("» Energy system activated", ACCENT_GREEN);
+        } else noDroneMsg();
     }
 
-    private void volarDrone() {
-        if (droneAdaptado != null) {
-            droneAdaptado.volar();
-            appendLog("» Drone antiguo en vuelo", ACCENT_ORANGE);
-        } else if (droneActual != null) {
-            droneActual.volar();
-            appendLog("» Drone moderno volando ▲", ACCENT_CYAN);
-        } else nodroneMsg();
+    private void flyDrone() {
+        if (adaptedDrone != null) {
+            adaptedDrone.fly();
+            appendLog("» Legacy drone in flight", ACCENT_ORANGE);
+        } else if (currentDrone != null) {
+            currentDrone.fly();
+            appendLog("» Modern drone flying ▲", ACCENT_CYAN);
+        } else noDroneMsg();
     }
 
-    private void verEnergia() {
-        if (droneAdaptado != null) {
-            droneAdaptado.verificarBateria();
-            appendLog("» Revisión de combustible completada", ACCENT_ORANGE);
-        } else if (droneActual != null) {
-            droneActual.verificarBateria();
-            int e = Math.max(0, barraEnergia.getValue() - 10);
-            barraEnergia.setValue(e);
-            barraEnergia.setForeground(e > 50 ? ACCENT_GREEN :
+    private void checkEnergy() {
+        if (adaptedDrone != null) {
+            adaptedDrone.checkBattery();
+            appendLog("» Fuel check completed", ACCENT_ORANGE);
+        } else if (currentDrone != null) {
+            currentDrone.checkBattery();
+            int e = Math.max(0, energyBar.getValue() - 10);
+            energyBar.setValue(e);
+            energyBar.setForeground(e > 50 ? ACCENT_GREEN :
                     e > 20 ? ACCENT_ORANGE : ACCENT_RED);
-            appendLog("» Nivel de energía: " + e + "%",
+            appendLog("» Energy level: " + e + "%",
                     e > 50 ? ACCENT_GREEN : e > 20 ? ACCENT_ORANGE : ACCENT_RED);
-        } else nodroneMsg();
+        } else noDroneMsg();
     }
 
-    private void aterrizarDrone() {
-        if (droneAdaptado != null) {
-            droneAdaptado.aterrizar();
-            appendLog("» Drone antiguo aterrizando ▼", ACCENT_ORANGE);
-        } else if (droneActual != null) {
-            droneActual.aterrizar();
-            appendLog("» Drone moderno aterrizando ▼", ACCENT_CYAN);
-        } else nodroneMsg();
+    private void landDrone() {
+        if (adaptedDrone != null) {
+            adaptedDrone.land();
+            appendLog("» Legacy drone landing ▼", ACCENT_ORANGE);
+        } else if (currentDrone != null) {
+            currentDrone.land();
+            appendLog("» Modern drone landing ▼", ACCENT_CYAN);
+        } else noDroneMsg();
     }
 
-    private void nodroneMsg() {
-        appendLog("⚠ Inicializa un drone primero", ACCENT_RED);
-        statusLabel.setText("⚠ SIN DRONE");
+    private void noDroneMsg() {
+        appendLog("⚠ Initialize a drone first", ACCENT_RED);
+        statusLabel.setText("⚠ NO DRONE");
         statusLabel.setForeground(ACCENT_RED);
     }
 
@@ -568,7 +568,7 @@ public class InterfazDrones extends JFrame {
         } catch (Exception ignored) {}
 
         SwingUtilities.invokeLater(() -> {
-            InterfazDrones ui = new InterfazDrones();
+            DroneInterface ui = new DroneInterface();
             ui.setVisible(true);
         });
     }

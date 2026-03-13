@@ -1,20 +1,20 @@
 package bridge;
 
-import energia.SistemaEnergia;
+import energy.SistemaEnergia;
 
 public abstract class Drone {
 
-    protected SistemaEnergia energia;
+    protected SistemaEnergia energy;
 
     public Drone(SistemaEnergia energia) {
-        this.energia = energia;
+        this.energy = energia;
     }
 
-    public abstract void volar();
+    public abstract void fly();
 
-    public abstract void aterrizar();
+    public abstract void land();
 
-    public void verificarBateria() {
-        System.out.println("Nivel de energía: " + energia.nivelEnergia() + "%");
+    public void checkBattery() {
+        System.out.println("Energy level: " + energy.energyLevel() + "%");
     }
 }
